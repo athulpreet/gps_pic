@@ -1,0 +1,164 @@
+/*
+ * File:   newmain.c
+ * Author: ATHUL
+ *
+ * Created on 12 September, 2022, 12:00 PM
+ */
+
+
+
+
+
+#include"CONFIG.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+ 
+
+#define _XTAL_FREQ 4000000
+#define F_CPU _XTAL_FREQ/9600// value to calculate baud rate
+
+
+char data;
+void UART_Initial(long baud_rate);
+char USART_Read(void);
+char USART_Read(void);
+
+void UART_Initial(long baud_rate)
+{
+
+    TRISCbits.RC7 = 1;
+
+    
+TXSTAbits.BRGH=1;// Default Baud rate speed 
+BAUDCONbits.BRG16 = 0;
+//SPBRG1=(_XTAL_FREQ/(16*9600))-1;
+SPBRG1=25;
+ SPBRGH1=0;
+RCSTAbits.SPEN = 1;
+INTCONbits.GIE=1;
+INTCONbits.PEIE=1;
+
+PIR1bits.RC1IF=0;
+TXSTAbits.SYNC = 0; // Selects Asynchronous Serial Communication Mode
+PIE1bits.RC1IE=1;
+RCSTAbits.CREN =1;
+}
+
+void UART_Initialize2(void) {
+    // setup UART
+    TRISCbits.TRISC6 = 0; // TX as output
+    TRISCbits.TRISC7 = 1; // RX as input
+    TXSTA1bits.SYNC = 0; // Async operation
+    TXSTA1bits.TX9 = 0; // No tx of 9th bit
+    TXSTA1bits.TXEN = 1; // Enable transmitter
+    RCSTA1bits.RC9 = 0; // No rx of 9th bit
+    RCSTA1bits.CREN = 1; // Enable receiver
+    RCSTA1bits.SPEN = 1; // Enable serial port
+    // Setting for 19200 BPS
+    BAUDCON1bits.BRG16 = 0; // Divisor at 8 bit
+    TXSTA1bits.BRGH = 1; // No high-speed baudrate
+    SPBRG1 = 25; // divisor value for 19200
+
+    PIE1bits.TX1IE = 0; // disable TX hardware interrupt
+    PIE1bits.RC1IE = 0; // disable RX hardware interrupt
+}
+
+
+void init_uart(void){
+    RCSTA1=0;
+    
+TRISCbits.RC6=0;
+TRISCbits.RC7=1;
+PIR1bits.RCIF=0; 
+    
+    SPBRG1=25;
+     
+     ANSELCbits.ANSC7=0;
+    TXSTA1bits.BRGH=1;
+    PIE1bits.RC1IE=1;
+    INTCONbits.GIE=1;
+    INTCONbits.PEIE=1;
+   
+    BAUDCON1bits.BRG16=0;
+    data=RCREG1;
+    TXSTA1bits.TXEN=1;
+    
+     RCSTA1bits.CREN=1;
+     TXSTA1bits.SYNC=0;
+     RCSTA1bits.SPEN=1;
+   
+}
+
+
+
+
+
+
+
+char USART_Read()
+{
+    
+      if(RCSTAbits.OERR)
+{ 
+RCSTA1bits.CREN = 0;
+__delay_ms(500);
+RCSTA1bits.CREN=1;
+} 
+    
+    
+    while(0==PIR1bits.RC1IF){
+        ;
+    }
+    
+    __delay_ms(250);
+    PIR1bits.RC1IF=0;
+
+return(RCREG1); //read the byte from recieve register and return value
+}
+
+char getch(void)
+{
+ return USART_Read();
+}
+
+void main(void) 
+{
+    
+   // TRISA2=0; //Pic microcontroller Port-A as OUTPUT
+    
+TRISAbits.TRISA2=0;
+
+init_uart();
+//UART_Initial(9600);
+
+LATAbits.LA2=1;
+ __delay_ms(500);
+ 
+  LATAbits.LA2=0;
+  __delay_ms(500);
+  
+
+ 
+
+while(1)
+{
+
+ 
+data=getch();
+if(data!='$'){
+LATAbits.LA2=1;
+
+}
+else if(data=='$'){
+LATAbits.LA2=0;
+
+}
+
+}
+
+}
+ 
+
+
